@@ -1,5 +1,4 @@
 __pycache__
  *.pyc
 .env
-app/api/simple_api.py
 /.vscode
