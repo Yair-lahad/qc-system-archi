@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import Optional, Dict, Any
 
 
 class TaskRequest(BaseModel):
@@ -21,5 +22,5 @@ class TaskStatusResponse(BaseModel):
     Data model representing a task status response
     """
     status: str
-    message: str = None
-    result: dict = None
+    message: Optional[str] = None
+    result: Optional[Dict[str, Any]] = None
