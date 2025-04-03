@@ -1,36 +1,36 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from celery.result import AsyncResult
-from app.workers.circuit_executor import dummy_task  # import actual function
-from app.core.celery_app import celery_app
-
-# Routes uses FastAPI which acts as Receptionist with 3 funcionalities:
-
-# Takes requests from clients.
-# Forward tickets of tasks to the workers (Celery)
-# Return messages to clients.
+from app.core.models import TaskRequest, TaskResponse, TaskStatusResponse
+from app.interface.dispatcher import dispatcher
 
 router = APIRouter()
 
 
-class TaskRequest(BaseModel):  # Object for Quantum Circuit
-    qc: str
-
-
-@router.post("/tasks")
+@router.post("/tasks", response_model=TaskResponse)
 def create_task(payload: TaskRequest):
-    task = dummy_task.delay(payload.qc)
-    return {"task_id": task.id, "message": "Task submitted successfully."}
+    """Submit a quantum circuit for execution"""
+    task = dispatcher.execute_circuit(payload.qc)
+    return TaskResponse(task_id=task.id, message="Task submitted successfully.")
 
 
-@router.get("/tasks/{task_id}")
+@router.get("/tasks/{task_id}", response_model=TaskStatusResponse)
 def get_task(task_id: str):
-    result = AsyncResult(task_id, app=celery_app)
+    """Get the status and result of a submitted task"""
+    result = dispatcher.get_task_result(task_id)
+
     if result.state == 'PENDING':
-        return {"status": "pending", "message": "Task is still in progress."}
+        return TaskStatusResponse(
+            status="pending",
+            message="Task is still in progress."
+        )
     elif result.state == 'SUCCESS':
-        return {"status": "completed", "result": result.result}
+        return TaskStatusResponse(
+            status="completed",
+            result=result.result
+        )
     elif result.state == 'FAILURE':
-        return {"status": "error", "message": str(result.result)}
+        return TaskStatusResponse(
+            status="error",
+            message=str(result.result)
+        )
     else:
         raise HTTPException(status_code=404, detail="Task not found.")
