@@ -9,11 +9,11 @@ It sends multiple tasks and polls their results concurrently.
 API_URL = "http://127.0.0.1:8000"
 
 qc_samples = [
-    "OPENQASM 1",
-    "OPENQASM 2",
-    "OPENQASM 3",
-    "OPENQASM 4",
-    "OPENQASM 5"
+    "OPENQASM 3; include \"stdgates.inc\"; qubit[2] q; bit[2] c; h q[0]; cx q[0], q[1]; c = measure q;",
+    "OPENQASM 3; include \"stdgates.inc\"; qubit[2] q; bit[2] c; h q[0]; cx q[0], q[1]; c = measure q;",
+    "OPENQASM 3; include \"stdgates.inc\"; qubit[2] q; bit[2] c; h q[0]; cx q[0], q[1]; c = measure q;",
+    "OPENQASM 3; include \"stdgates.inc\"; qubit[2] q; bit[2] c; h q[0]; cx q[0], q[1]; c = measure q;",
+    "OPENQASM 3; include \"stdgates.inc\"; qubit[2] q; bit[2] c; h q[0]; cx q[0], q[1]; c = measure q;"
 ]
 
 

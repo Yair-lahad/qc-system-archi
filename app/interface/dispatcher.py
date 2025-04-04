@@ -31,6 +31,10 @@ class CircuitTaskDispatcher:
         """
         Dispatches a quantum circuit execution task
         """
+        if not qasm_str or not qasm_str.strip():
+            raise ValueError("Quantum circuit string cannot be empty.")
+        if "OPENQASM" not in qasm_str.upper():
+            raise ValueError("Quantum circuit must contain 'OPENQASM'.")
         return celery_app.send_task("app.workers.tasks.execute_circuit_task", args=[qasm_str])
 
     async def get_task_result(self, task_id: str):
@@ -41,20 +45,21 @@ class CircuitTaskDispatcher:
         result = AsyncResult(task_id, app=celery_app)
 
         if result.successful():
-            return {
+            response = {
                 "status": "completed",
                 "result": result.result
             }
         elif result.state in ("PENDING", "RECEIVED", "STARTED"):
-            return {
+            response = {
                 "status": "pending",
                 "message": "Task is still in progress."
             }
         else:
-            return {
+            response = {
                 "status": "error",
                 "message": "Task not found or failed."
             }
+        return response
 
 
 # Create a singleton dispatcher instance for use throughout the application

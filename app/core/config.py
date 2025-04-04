@@ -2,14 +2,12 @@ import logging
 from dotenv import load_dotenv
 import os
 
-# Always load .env.docker first if it exists
-if os.path.exists(".env.docker"):
+# Only load .env.docker in production/Docker environment
+if os.environ.get("ENVIRONMENT") == "production" and os.path.exists(".env.docker"):
     load_dotenv(dotenv_path=".env.docker")
 else:
-    load_dotenv()
+    load_dotenv()  # Load regular .env for local development
 
-print("ENVIRONMENT =", os.getenv("ENVIRONMENT"))
-print("REDIS_HOST =", os.getenv("REDIS_HOST"))
 logger = logging.getLogger("api")
 
 # Redis and Celery configuration
