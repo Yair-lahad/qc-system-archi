@@ -4,11 +4,13 @@ from app.core.config import BROKER_URL, RESULT_BACKEND
 
 logger = logging.getLogger("api")
 
-# Celery is Task Queue library.
-# Helps to send and receive messages via "Message Broker", making sure they are not lost.
-# Keeps consistency and maintainability across the project.
-# Our Message Broker is Redis, making the Async proccessing by itself.
-# Modularity is used here, we can easily switch a Broker.
+"""
+Celery is Task Queue library.
+Helps to send and receive messages via "Message Broker", making sure they are not lost.
+Keeps consistency and maintainability across the project.
+Our Message Broker is Redis, making the Async proccessing by itself.
+Modularity is used here, we can easily switch a Broker.
+"""
 
 logger.info(f"Configuring Celery with broker: {BROKER_URL}")
 

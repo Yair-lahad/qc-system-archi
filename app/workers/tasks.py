@@ -1,3 +1,11 @@
+"""
+tasks.py - Celery worker logic for executing QASM3 quantum circuits.
+
+Responsible for:
+- Parsing QASM3 input
+- Executing with Qiskit AerSimulator
+- Formatting result counts
+"""
 import logging
 from app.core.celery_app import celery_app
 from qiskit import qasm3, QuantumCircuit
@@ -8,8 +16,11 @@ logger = logging.getLogger("worker")
 
 def execute_quantum_circuit(qasm_str: str) -> dict:
     """
-    Executes a QASM3-based quantum circuit and returns result counts.
-    On failure, returns a structured error message.
+    Parses and executes a QASM3 circuit using Qiskit AerSimulator.
+    Args:
+        qc_string (str): A valid quantum circuit in QASM3 format.
+    Returns:
+        dict: Counts result (measurement outcomes) or error payload.
     """
     try:
         # Deserialize QASM3 to QuantumCircuit

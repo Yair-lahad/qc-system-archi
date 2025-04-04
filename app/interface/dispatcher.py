@@ -1,12 +1,4 @@
-from celery.result import AsyncResult
-from app.core.celery_app import celery_app
-import logging
-
-logger = logging.getLogger("api")
-
-
-class CircuitTaskDispatcher:
-    """
+"""
     Interface layer between API endpoints and worker tasks.
 
     The dispatcher serves multiple important purposes in the architecture:
@@ -25,11 +17,28 @@ class CircuitTaskDispatcher:
        - API code can interact with tasks through a clean, consistent API
        - Makes the codebase more maintainable as it grows
        - Enables centralized logging and metrics collection
+"""
+from celery.result import AsyncResult
+from app.core.celery_app import celery_app
+import logging
+
+logger = logging.getLogger("api")
+
+
+class CircuitTaskDispatcher:
+    """
+    Dispatches quantum circuit tasks and retrieves their results.
     """
 
     async def execute_circuit(self, qasm_str: str):
         """
-        Dispatches a quantum circuit execution task
+        Validates and submits a QASM3 circuit for execution.
+        Args:
+            qasm_str (str): Quantum circuit as a QASM3 string.
+        Returns:
+            AsyncResult: A Celery task handle.
+        Raises:
+            ValueError: If the QASM string is invalid (missing 'OPENQASM' or 'qubit').
         """
         if not qasm_str or not qasm_str.strip():
             raise ValueError("Quantum circuit string cannot be empty.")
@@ -39,7 +48,11 @@ class CircuitTaskDispatcher:
 
     async def get_task_result(self, task_id: str):
         """
-        Retrieves the result of a task by its ID, and returns a JSON-friendly dict.
+        Retrieves the result of a task by ID.
+        Args:
+            task_id (str): Task identifier (UUID from Celery).
+        Returns:
+            dict: Result status and value or error.
         """
         logger.debug(f"Retrieving result for task ID: {task_id}")
         result = AsyncResult(task_id, app=celery_app)

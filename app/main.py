@@ -1,3 +1,9 @@
+"""
+main.py - FastAPI application entry point
+
+Sets up the API server with middleware, routing, and logging.
+"""
+
 import logging
 from fastapi import FastAPI
 from app.api import routes
