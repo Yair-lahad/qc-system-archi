@@ -4,6 +4,14 @@ services:
     image: redis:latest
     ports:
       - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
 
   api:
     build:
@@ -11,18 +19,35 @@ services:
       dockerfile: Dockerfile.api
     ports:
       - "8000:8000"
-    environment:
-      - BROKER_URL=redis://redis:6379/0
-      - RESULT_BACKEND=redis://redis:6379/0
+    env_file:
+      - .env.docker
+    volumes:
+      - ./logs:/app/logs
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   worker:
     build:
       context: .
       dockerfile: Dockerfile.worker
-    environment:
-      - BROKER_URL=redis://redis:6379/0
-      - RESULT_BACKEND=redis://redis:6379/0
+    env_file:
+      - .env.docker
+    volumes:
+      - ./logs:/app/logs
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.core.celery_app", "inspect", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  redis-data:

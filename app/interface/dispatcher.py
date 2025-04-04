@@ -1,57 +1,54 @@
 from celery.result import AsyncResult
 from app.core.celery_app import celery_app
+import logging
+
+logger = logging.getLogger("api")
 
 
 class CircuitTaskDispatcher:
     """
-    Interface layer between API and worker tasks
+    Interface layer between API endpoints and worker tasks.
 
-    Responsible for dispatching circuit execution tasks and retrieving results
+    The dispatcher serves multiple important purposes in the architecture:
+
+    1. Separation of concerns:
+       - Abstracts away task submission and retrieval details from API code
+       - Keeps API routes focused on HTTP request/response handling
+       - Allows worker code to focus on task execution logic
+
+    2. Encapsulation of task management:
+       - Centralizes how tasks are dispatched and monitored
+       - Makes it easier to modify task processing behavior in one place
+       - Simplifies potential future changes to the task queue system
+
+    3. Provides a consistent interface:
+       - API code can interact with tasks through a clean, consistent API
+       - Makes the codebase more maintainable as it grows
+       - Enables centralized logging and metrics collection
     """
 
     def execute_circuit(self, qasm_str: str):
         """
         Dispatches a quantum circuit execution task
-        Returns the celery task object
         """
-        # Using send_task with exact task name instead of importing the task
-        return celery_app.send_task("execute_quantum_circuit", args=[qasm_str])
-
-    def execute_dummy_task(self, qasm_str: str):
-        """
-        Dispatches a dummy task (for backward compatibility)
-        Returns the celery task object
-        """
-        return celery_app.send_task("execute_dummy_circuit", args=[qasm_str])
+        return celery_app.send_task("app.workers.tasks.execute_circuit_task", args=[qasm_str])
 
     def get_task_result(self, task_id: str):
         """
-        Retrieves the result of a task by its ID with debug info
+        Retrieves the result of a task by its ID.
+
+        This method provides a clean interface for checking task status and
+        getting results, abstracting away the details of the Celery backend.
+
+        Args:
+            task_id: The unique identifier of the task
+
+        Returns:
+            Celery AsyncResult object containing task status and result
         """
-        task = AsyncResult(task_id, app=celery_app)
-
-        # Add debug info
-        debug_info = {
-            "task_id": task_id,
-            "state": task.state,
-            "ready": task.ready(),
-            "successful": task.successful() if task.ready() else None,
-        }
-
-        try:
-            if task.result:
-                debug_info["result"] = task.result
-        except:
-            debug_info["result_error"] = "Could not access result"
-
-        # Return all info for debugging
-        return {
-            "status": task.state.lower(),
-            "debug": debug_info,
-            "message": f"Task is in state: {task.state}",
-            "result": task.result if task.ready() and task.successful() else None
-        }
+        logger.debug(f"Retrieving result for task ID: {task_id}")
+        return AsyncResult(task_id, app=celery_app)
 
 
-# Create a singleton dispatcher instance
+# Create a singleton dispatcher instance for use throughout the application
 dispatcher = CircuitTaskDispatcher()

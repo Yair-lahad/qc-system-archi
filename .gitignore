@@ -1,4 +1,19 @@
 __pycache__
- *.pyc
+*.pyc
+*.pyo
 .env
+.env.*
+.env.docker
 /.vscode
+.DS_Store
+/logs
+/logs/*
+.coverage
+htmlcov/
+.pytest_cache/
+.idea/
+.python-version
+celerybeat-schedule
+*.log
+*.log.*
+local_settings.py

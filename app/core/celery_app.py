@@ -1,5 +1,8 @@
 from celery import Celery
-import os
+import logging
+from app.core.config import BROKER_URL, RESULT_BACKEND
+
+logger = logging.getLogger("api")
 
 # Celery is Task Queue library.
 # Helps to send and receive messages via "Message Broker", making sure they are not lost.
@@ -7,35 +10,25 @@ import os
 # Our Message Broker is Redis, making the Async proccessing by itself.
 # Modularity is used here, we can easily switch a Broker.
 
-# read more at https://docs.celeryq.dev/en/stable/getting-started/first-steps-with-celery.html
+logger.info(f"Configuring Celery with broker: {BROKER_URL}")
 
-
-BROKER_URL = "redis://localhost:6379/0"
-RESULT_BACKEND = "redis://localhost:6379/0"
-# BROKER_URL = os.getenv("LOCAL_URL", "redis://redis:6379/0")
-# RESULT_BACKEND = os.getenv("LOCAL_BACKEND", "redis://redis:6379/0")
-
-# Initialize Celery with proper configuration
+# Creates an Instance of the Celery application.
 celery_app = Celery(
     "quantum_tasks",
     broker=BROKER_URL,
     backend=RESULT_BACKEND
 )
 
-# Add configuration
+# Ensure task modules are imported and registered with Celery
+celery_app.conf.imports = [
+    'app.workers.tasks',
+]
+
+# Optional: Configure Celery
 celery_app.conf.update(
     task_serializer='json',
     accept_content=['json'],
     result_serializer='json',
-    timezone='UTC',
-    enable_utc=True,
+    task_track_started=True,
+    worker_prefetch_multiplier=1,
 )
-
-# Include the task modules explicitly
-celery_app.conf.task_routes = {
-    'execute_quantum_circuit': {'queue': 'default'},
-    'execute_dummy_circuit': {'queue': 'default'},
-}
-
-# Auto-discover tasks
-celery_app.autodiscover_tasks(['app.workers'])

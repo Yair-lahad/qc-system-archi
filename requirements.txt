@@ -5,3 +5,6 @@ celery
 redis
 pydantic
 requests
+python-json-logger
+tenacity
+python-dotenv
