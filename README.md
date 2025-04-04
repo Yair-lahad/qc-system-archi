@@ -46,6 +46,11 @@ The worker layer contains the business logic for executing quantum circuits:
 7. Results are stored in Redis
 8. When the client requests results (`GET /tasks/{id}`), the API uses the dispatcher to retrieve them from Redis
 
+# Note:
+# Although Celery task submission and result retrieval are synchronous under the hood,
+# we expose them as async def functions in the interface layer to maintain non-blocking
+# behavior at the API level and enable future async extensions.
+
 ### Observability Features
 
 The system includes comprehensive observability features:

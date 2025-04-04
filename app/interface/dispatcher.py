@@ -27,13 +27,13 @@ class CircuitTaskDispatcher:
        - Enables centralized logging and metrics collection
     """
 
-    def execute_circuit(self, qasm_str: str):
+    async def execute_circuit(self, qasm_str: str):
         """
         Dispatches a quantum circuit execution task
         """
         return celery_app.send_task("app.workers.tasks.execute_circuit_task", args=[qasm_str])
 
-    def get_task_result(self, task_id: str):
+    async def get_task_result(self, task_id: str):
         """
         Retrieves the result of a task by its ID, and returns a JSON-friendly dict.
         """
