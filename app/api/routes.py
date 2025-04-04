@@ -17,7 +17,7 @@ def get_task(task_id: str):
     """Get the status and result of a submitted task"""
     result_data = dispatcher.get_task_result(task_id)
 
-    if result_data["status"] == "unknown":
+    if result_data["status"] == "error":
         raise HTTPException(status_code=404, detail=result_data["message"])
 
     return TaskStatusResponse(**result_data)

@@ -35,19 +35,26 @@ class CircuitTaskDispatcher:
 
     def get_task_result(self, task_id: str):
         """
-        Retrieves the result of a task by its ID.
-
-        This method provides a clean interface for checking task status and
-        getting results, abstracting away the details of the Celery backend.
-
-        Args:
-            task_id: The unique identifier of the task
-
-        Returns:
-            Celery AsyncResult object containing task status and result
+        Retrieves the result of a task by its ID, and returns a JSON-friendly dict.
         """
         logger.debug(f"Retrieving result for task ID: {task_id}")
-        return AsyncResult(task_id, app=celery_app)
+        result = AsyncResult(task_id, app=celery_app)
+
+        if result.successful():
+            return {
+                "status": "completed",
+                "result": result.result
+            }
+        elif result.state in ("PENDING", "RECEIVED", "STARTED"):
+            return {
+                "status": "pending",
+                "message": "Task is still in progress."
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "Task not found or failed."
+            }
 
 
 # Create a singleton dispatcher instance for use throughout the application
