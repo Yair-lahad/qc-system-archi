@@ -12,3 +12,5 @@ httpx
 qiskit>=0.40.0
 qiskit-aer>=0.11.0
 qiskit_qasm3_import
+pytest
+pytest-asyncio

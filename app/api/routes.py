@@ -21,3 +21,8 @@ async def get_task(task_id: str):
         raise HTTPException(status_code=404, detail=result_data["message"])
 
     return TaskStatusResponse(**result_data)
+
+
+@router.get("/health/ping")
+def ping():
+    return {"status": "ok"}
