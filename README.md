@@ -1,6 +1,7 @@
 # Quantum Circuits System Architecture
 
-This project implements a robust, asynchronous system for executing quantum circuits using FastAPI, Celery, and Redis.
+This 48 hours built project for a job interview.
+implements a robust, asynchronous system for executing quantum circuits using FastAPI, Celery, and Redis.
 
 ## Architecture Overview
 

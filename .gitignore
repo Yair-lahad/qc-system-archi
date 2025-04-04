@@ -2,8 +2,6 @@ __pycache__
 *.pyc
 *.pyo
 .env
-.env.*
-.env.docker
 /.vscode
 .DS_Store
 /logs
