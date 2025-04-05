@@ -74,8 +74,8 @@ quantum-circuit-system/
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-github-username/quantum-circuit-system.git
-cd quantum-circuit-system
+git clone https://github.com/Yair-lahad/qc-system-archi.git
+cd qc-system-archi
 ```
 
    - If you're starting from scratch, you can create a new repository and copy these files into it.
