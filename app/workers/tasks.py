@@ -7,6 +7,7 @@ Responsible for:
 - Formatting result counts
 """
 import logging
+from collections import Counter
 from app.core.celery_app import celery_app
 from qiskit import qasm3, QuantumCircuit
 from qiskit_aer import AerSimulator
@@ -18,9 +19,9 @@ def execute_quantum_circuit(qasm_str: str) -> dict:
     """
     Parses and executes a QASM3 circuit using Qiskit AerSimulator.
     Args:
-        qc_string (str): A valid quantum circuit in QASM3 format.
+        qasm_str (str): A valid quantum circuit in QASM3 format.
     Returns:
-        dict: Counts result (measurement outcomes) or error payload.
+        dict: Reduced counts result (final bit outcomes) or error payload.
     """
     try:
         # Deserialize QASM3 to QuantumCircuit
@@ -28,9 +29,13 @@ def execute_quantum_circuit(qasm_str: str) -> dict:
         # Run the circuit on AerSimulator
         simulator = AerSimulator()
         result = simulator.run(qc, shots=1024).result()
-        counts = result.get_counts()
-        logger.info(f"Execution result: {counts}")
-        return counts
+        raw_counts = result.get_counts()
+        logger.info(f"Raw execution result: {raw_counts}")
+       # Reduce to single-bit outcomes (last bit only)
+        reduced = Counter(bit[-1]
+                          for bit in raw_counts for _ in range(raw_counts[bit]))
+        logger.info(f"Reduced result: {dict(reduced)}")
+        return dict(reduced)
 
     except Exception as e:
         logger.exception("Failed to parse or execute QASM3 circuit")

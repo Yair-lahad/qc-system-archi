@@ -1,156 +1,129 @@
-# Quantum Circuits System Architecture
+# Quantum Circuit Execution System 
 
-This 48 hours built project for a job interview.
-implements a robust, asynchronous system for executing quantum circuits using FastAPI, Celery, and Redis.
+A containerized system for asynchronous quantum circuit execution using FastAPI, Celery, and Redis.
 
-## Architecture Overview
+This system is a 48 hours Job Interview Project focuses on robust task processing with high availability and integrity.
 
-### System Components
+## System Architecture
+
+The Structure follows a modular, layered architecture with clear boundaries between components, enabling containerization and maintainability.
+
+### Key Components
 
 #### 1. API Layer (FastAPI)
-The API layer handles HTTP requests and responses, providing endpoints for submitting quantum circuits and retrieving results. It's built with FastAPI for high performance and ease of development.
+- API endpoints for submitting and retrieving quantum circuits
+- Asynchronous request handling
+- Decoupled from processing logic for independent deployment and scaling
 
-#### 2. Interface Layer (Dispatcher)
-The dispatcher serves as a critical interface between the API and worker layers. It has several important responsibilities:
+#### 2. Interface Layer (Task Dispatcher)
+- Clear boundary between API and workers enables separation
+- Centralizes complex task logic for better maintainability
+- Abstraction layer allows swapping implementation details without API changes
 
-- **Separation of Concerns**: Isolates API code from task processing details
-- **Task Management**: Provides a centralized interface for submitting tasks and retrieving results
-- **Abstraction**: Shields the API from the specifics of the task queue implementation
-- **Consistency**: Ensures uniform handling of task submission and retrieval throughout the application
-- **Maintainability**: Makes it easier to change task processing behavior without affecting API code
-
-Without the dispatcher, the API endpoints would need to interact directly with Celery, coupling the API code to the specific task queue implementation. The dispatcher provides a clean boundary that improves code organization and maintainability.
-
-#### 3. Task Queue (Celery + Redis)
-The task queue system manages asynchronous processing of quantum circuit tasks:
-
-- **Celery**: Handles task definition, dispatching, and execution
-- **Redis**: Acts as the message broker and result backend
-- **Task Registration**: Defines what tasks are available for execution
-- **Task Execution**: Processes the quantum circuits asynchronously
+#### 3. Message Queue (Redis + Celery)
+- Ensures task integrity and persistence
+- Reliable fully asynchronous task processing
+- Decouple producers from consumers for independent scaling
 
 #### 4. Worker Layer
-The worker layer contains the business logic for executing quantum circuits:
+- Isolated execution of Quantum Circuit logic prevents cascading failures
+- Support robust and containerized deployment
+- Independent scaling based on processing demands
 
-- **Task Functions**: Pure functions that execute quantum circuits without Celery dependencies
-- **Celery Tasks**: Wrapper functions that integrate with Celery for asynchronous processing
-- **Task Monitoring**: Logs and metrics collection for observability
+## Project Structure
 
-### Communication Flow
+```
+quantum-circuit-system/
+├── app/
+│   ├── api/                    ## API endpoints and request handling
+│   │   ├── health.py             # Health check endpoints
+│   │   ├── metrics.py            # Metrics endpoints
+│   │   └── routes.py             # Main API routes
+│   ├── core/                   ## Core application components
+│   │   ├── celery_app.py         # Celery configuration
+│   │   ├── config.py             # Application configuration
+│   │   ├── logging_config.py     # Logging setup
+│   │   ├── middleware.py         # Request/response middleware
+│   │   ├── models.py             # Data models
+│   │   └── redis_client.py       # Redis connection
+│   ├── interface/              ## Interface between API and workers
+│   │   └── dispatcher.py         # Task dispatching
+│   ├── workers/                ## Worker processes
+│   │   ├── task_wrapper.py       # Task metrics and monitoring
+│   │   └── tasks.py              # Task definitions
+│   └── main.py                 ## Application entry point
+├── tests/                      ## Test suite
+│   └── test_api.py               # API integration tests
+├── docker-compose.yaml           # Container orchestration
+├── Dockerfile.api                # API container
+├── Dockerfile.worker             # Worker container
+├── .env.docker                   # Docker environment variables
+├── requirements.txt              # Python dependencies
+└── README.md                     # This file
+```
 
-1. A client submits a quantum circuit to the API (`POST /tasks`)
-2. The API route passes the circuit to the dispatcher
-3. The dispatcher submits the task to Celery and returns a task ID
-4. The API returns the task ID to the client
-5. Celery routes the task to an available worker
-6. The worker executes the quantum circuit
-7. Results are stored in Redis
-8. When the client requests results (`GET /tasks/{id}`), the API uses the dispatcher to retrieve them from Redis
+## How to Run
 
-# Note:
-# Although Celery task submission and result retrieval are synchronous under the hood,
-# we expose them as async def functions in the interface layer to maintain non-blocking
-# behavior at the API level and enable future async extensions.
+### Getting Started
 
-### Observability Features
+### Quick Start
 
-The system includes comprehensive observability features:
+0. Prerequisites:
 
-- **Health Checks**: Endpoints to verify the health of each component
-- **Logging**: Detailed logs for API requests, task execution, and system events
-- **Metrics**: Collection of performance and utilization metrics
-
-## Getting Started
-
-### Prerequisites
-
-- Docker and Docker Compose
-- Python 3.9 or higher (for local development)
-- Redis (for local development without Docker)
-
-### Running with Docker Compose
+   Docker + Docker Compose installed (Docker Desktop recommended)
 
 1. Clone the repository:
-   ```
-   git clone <repository-url>
-   cd quantum-circuits-system
-   ```
+```bash
+git clone https://github.com/your-github-username/quantum-circuit-system.git
+cd quantum-circuit-system
+```
 
-2. Build and start the containers:
-   ```
-   docker-compose up --build
-   ```
+   - If you're starting from scratch, you can create a new repository and copy these files into it.
+   - Alternatively, you can fork this repository to your GitHub account.
 
-3. Access the API:
-   - API documentation: http://localhost:8000/docs
-   - Health check: http://localhost:8000/health
+2. Start the system using Docker Compose:
+```bash
+docker-compose up --build
+```
 
-### Running Locally for Development
+3. Access the API documentation:
+```
+http://localhost:8000/docs
+```
 
-1. Start Redis (using Docker):
-   ```
-   docker run --name my-redis -p 6379:6379 -d redis:latest
-   ```
+### Running Tests
 
-2. Create a virtual environment and install dependencies:
-   ```
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-
-3. Create a `.env` file in the project root:
-   ```
-   REDIS_HOST=localhost
-   REDIS_PORT=6379
-   REDIS_DB=0
-   LOG_LEVEL=INFO
-   ENVIRONMENT=development
-   ```
-
-4. Start the FastAPI server (in one terminal):
-   ```
-   uvicorn app.main:app --reload
-   ```
-
-5. Start a Celery worker (in another terminal):
-   ```
-   celery -A app.core.celery_app worker --loglevel=info
-   ```
+Run the test suite with:
+```bash
+docker-compose up -d  # in order for the app to be live behind the scenes
+docker-compose run --rm test
+```
 
 ## API Endpoints
 
-### Submit a Quantum Circuit
+### Submit Quantum Circuit
 ```
 POST /tasks
 ```
 
-Request body:
+Request:
 ```json
 {
-  "qc": "<serialized_quantum_circuit_in_qasm3>"
+  "qc": "OPENQASM 3; include \"stdgates.inc\"; qubit[2] q; bit[2] c; h q[0]; cx q[0], q[1]; c = measure q;"
 }
 ```
 
 Response:
 ```json
 {
-  "task_id": "12345",
+  "task_id": "8f1c3d9e-4a5b-6c7d-8e9f-0a1b2c3d4e5f",
   "message": "Task submitted successfully."
 }
 ```
 
-### Get Task Result
+### Get Task Status/Result
 ```
 GET /tasks/{task_id}
-```
-
-Response (completed):
-```json
-{
-  "status": "completed",
-  "result": {"message": "Circuit executed successfully", "input": "..."}
-}
 ```
 
 Response (pending):
@@ -161,7 +134,18 @@ Response (pending):
 }
 ```
 
-### Health Check
+Response (completed):
+```json
+{
+  "status": "completed",
+  "result": {
+    "00": 512,
+    "11": 512
+  }
+}
+```
+
+### Health Checks
 ```
 GET /health
 ```
@@ -178,55 +162,129 @@ Response:
 }
 ```
 
-## Running Tests
-
-With the system running (either via Docker Compose or locally):
-
+### Metrics
 ```
-pytest tests/
+GET /metrics
 ```
 
-## Project Structure
-
+Response:
+```json
+{
+  "queue_stats": {
+    "pending_tasks": 0,
+    "active_tasks": 0,
+    "reserved_tasks": 0,
+    "completed_tasks": 124
+  },
+  "task_stats": {
+    "total": 125,
+    "completed": 124,
+    "failed": 1,
+    "success_rate": 99.2
+  },
+  "redis_stats": {
+    "connected_clients": 4,
+    "used_memory_human": "1.2M",
+    "total_commands_processed": 8564
+  }
+}
 ```
-quantum-circuits-system/
-├── app/
-│   ├── api/
-│   │   ├── __init__.py
-│   │   ├── health.py         # Health check endpoints
-│   │   ├── metrics.py        # Metrics endpoints
-│   │   └── routes.py         # API route definitions
-│   ├── core/
-│   │   ├── __init__.py
-│   │   ├── celery_app.py     # Celery configuration
-│   │   ├── config.py         # Application configuration
-│   │   ├── logging_config.py # Logging setup
-│   │   ├── middleware.py     # FastAPI middleware
-│   │   ├── models.py         # Data models
-│   │   └── redis_client.py   # Redis connection
-│   ├── interface/
-│   │   ├── __init__.py
-│   │   └── dispatcher.py     # Task dispatcher
-│   ├── workers/
-│   │   ├── __init__.py
-│   │   └── tasks.py          # Task definitions
-│   ├── __init__.py
-│   └── main.py               # Application entry point
-├── tests/
-│   ├── __init__.py
-│   ├── integration_test.py   # Integration tests
-│   └── simple_api_test.py    # Basic API tests
-├── .env                      # Local environment variables
-├── .env.docker              # Docker environment variables
-├── .gitignore               # Git ignore file
-├── Dockerfile.api           # API container definition
-├── Dockerfile.worker        # Worker container definition
-├── LICENSE                  # Project license
-├── README.md                # This file
-├── docker-compose.yaml      # Container orchestration
-└── requirements.txt         # Python dependencies
+
+## Key Features
+
+### 1. Asynchronous Processing & Task Integrity
+- Tasks are processed asynchronously via Celery
+- Redis ensures task persistence and prevents task loss
+- Task state is tracked and retrievable at any time
+
+### 2. Containerization & Orchestration
+- Docker containers for all system components
+- Docker Compose for service orchestration
+- Volume mounts for logs and Redis data persistence
+
+### 3. Robustness & Error Handling
+- Comprehensive error handling for all operations
+- Detailed logging for debugging and monitoring
+- Health checks for system component monitoring
+- Graceful degradation when components fail
+
+### 4. Scalability
+- Horizontally scalable worker processes
+- Connection pooling for Redis
+- Efficient resource utilization
+
+## Development
+
+### Local Setup
+
+1. Create a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Start Redis locally:
+```bash
+docker run -p 6379:6379 redis:latest
+```
+
+4. Run the API server:
+```bash
+uvicorn app.main:app --reload
+```
+
+5. Start a Celery worker:
+```bash
+celery -A app.core.celery_app worker --loglevel=info --pool=solo
+```
+
+## Examples
+
+### Example: Bell State Circuit
+
+```python
+import requests
+
+# Bell state circuit in QASM3 format
+bell_circuit = """
+OPENQASM 3;
+include "stdgates.inc";
+qubit[2] q;
+bit[2] c;
+h q[0];
+cx q[0], q[1];
+c = measure q;
+"""
+
+# Submit the circuit
+response = requests.post(
+    "http://localhost:8000/tasks",
+    json={"qc": bell_circuit}
+)
+task_id = response.json()["task_id"]
+print(f"Task submitted with ID: {task_id}")
+
+# Poll for results
+while True:
+    result = requests.get(f"http://localhost:8000/tasks/{task_id}")
+    data = result.json()
+    if data["status"] == "completed":
+        print("Circuit execution results:")
+        print(data["result"])
+        break
+    elif data["status"] == "error":
+        print(f"Error: {data['message']}")
+        break
+    print("Still processing...")
+    import time
+    time.sleep(1)
 ```
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -3,6 +3,7 @@ import httpx
 import asyncio
 
 API_URL = "http://api:8000"  # 'api' is the service name in docker-compose
+QASM = 'OPENQASM 3; include "stdgates.inc"; qubit[1] q; bit[1] c; h q[0]; c = measure q;'
 
 
 @pytest.mark.asyncio
@@ -19,7 +20,8 @@ async def test_valid_qasm_submission_and_result():
             get = await client.get(f"/tasks/{task_id}")
             data = get.json()
             if data["status"] == "completed":
-                assert any(k in data["result"] for k in ["00", "11", "01", "10"])
+                # Updated assertion: expect result keys to be "0" and/or "1"
+                assert set(data["result"].keys()).issubset({"0", "1"})
                 return
             await asyncio.sleep(1)
         assert False, "Task did not complete in time"
@@ -34,13 +36,18 @@ async def test_invalid_qasm_returns_error():
         task_id = post.json()["task_id"]
 
         for _ in range(10):
-            get = await client.get(f"/tasks/{task_id}")
-            data = get.json()
-            if data["status"] == "completed":
-                assert "error" in data["result"]
-                return
-            await asyncio.sleep(1)
-        assert False, "Task did not complete with error as expected"
+            res = await client.get(f"/tasks/{task_id}")
+            data = res.json()
+            # Handle edge cases like missing task or immediate error
+            if "status" in data:
+                if data["status"] == "error":
+                    assert "message" in data
+                    return
+                elif data["status"] == "completed":
+                    assert "error" in data["result"]
+                    return
+            await asyncio.sleep(0.5)
+        assert False, "Task did not return error as expected"
 
 
 @pytest.mark.asyncio
@@ -49,3 +56,26 @@ async def test_dispatcher_validation_rejects_bad_input():
         post = await client.post("/tasks", json={})
         assert post.status_code == 422
         assert "detail" in post.json()
+
+
+@pytest.mark.asyncio
+async def test_concurrent_task_execution():
+    async def submit_and_poll(client):
+        post = await client.post("/tasks", json={"qc": QASM})
+        assert post.status_code == 200
+        task_id = post.json()["task_id"]
+
+        # Poll for result
+        for _ in range(20):
+            res = await client.get(f"/tasks/{task_id}")
+            data = res.json()
+            if data["status"] == "completed":
+                assert set(data["result"].keys()).issubset({"0", "1"})
+                return
+            await asyncio.sleep(0.2)
+
+        assert False, f"Task {task_id} did not complete in time"
+
+    async with httpx.AsyncClient(base_url=API_URL) as client:
+        task_count = 10  # Adjust to stress system (e.g., 50)
+        await asyncio.gather(*(submit_and_poll(client) for _ in range(task_count)))

@@ -57,6 +57,7 @@ services:
       timeout: 10s
       retries: 3
   test:
+    profiles: ["test"]
     build:
       context: .
       dockerfile: Dockerfile.api # use same env as API to access HTTP routes
@@ -66,6 +67,8 @@ services:
       api:
         condition: service_healthy
     command: pytest tests/
+    volumes:
+      - .:/app
 
 volumes:
   redis-data:
