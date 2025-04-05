@@ -75,18 +75,21 @@ quantum-circuit-system/
 1. Clone the repository:
 ```bash
 git clone https://github.com/Yair-lahad/qc-system-archi.git
+```
+2. Enter the working directory 
+```bash
 cd qc-system-archi
 ```
 
    - If you're starting from scratch, you can create a new repository and copy these files into it.
    - Alternatively, you can fork this repository to your GitHub account.
 
-2. Start the system using Docker Compose:
+3. Start the system using Docker Compose:
 ```bash
 docker-compose up --build
 ```
 
-3. Access the API documentation:
+4. Access the API documentation:
 ```
 http://localhost:8000/docs
 ```
